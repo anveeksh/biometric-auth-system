@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>✅ Authentication Successful!</h1>
+            <h2>Welcome, {{ username }}!</h2>
+            
+            <div class="dashboard-content">
+                <p>You have successfully logged in using biometric authentication.</p>
+                
+                <div class="info-box">
+                    <h3>🔒 Security Features Active:</h3>
+                    <ul>
+                        <li>✓ Hand geometry recognition</li>
+                        <li>✓ Encrypted biometric template</li>
+                        <li>✓ Secure session management</li>
+                    </ul>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-card">
+                        <h4>Authentication Method</h4>
+                        <p>Hand Biometrics</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Security Level</h4>
+                        <p>High</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <a href="/api/logout" class="btn btn-secondary">Logout</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

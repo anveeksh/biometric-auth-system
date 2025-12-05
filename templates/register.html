@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biometric Registration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🔐 Biometric Authentication</h1>
+            <h2>Register New User</h2>
+            
+            <form id="registerForm">
+                <input type="text" id="username" placeholder="Choose a username" required>
+                
+                <div class="camera-container">
+                    <video id="video" autoplay playsinline></video>
+                    <canvas id="canvas" style="display: none;"></canvas>
+                </div>
+                
+                <div class="instructions">
+                    <p>📋 Instructions:</p>
+                    <ul>
+                        <li>Start the camera</li>
+                        <li>Show your open hand clearly</li>
+                        <li>Ensure good lighting</li>
+                        <li>Capture your hand biometric</li>
+                    </ul>
+                </div>
+                
+                <div class="button-group">
+                    <button type="button" id="startCamera" class="btn btn-secondary">Start Camera</button>
+                    <button type="button" id="captureBtn" class="btn btn-primary" disabled>Capture Hand</button>
+                    <button type="submit" class="btn btn-success" disabled>Register</button>
+                </div>
+                
+                <div id="message" class="message"></div>
+                
+                <p class="register-link">
+                    Already have an account? <a href="/">Login here</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let stream = null;
+        let capturedImage = null;
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startCameraBtn = document.getElementById('startCamera');
+        const captureBtn = document.getElementById('captureBtn');
+        const registerForm = document.getElementById('registerForm');
+        const submitBtn = registerForm.querySelector('button[type="submit"]');
+        const messageDiv = document.getElementById('message');
+
+        // Start camera
+        startCameraBtn.addEventListener('click', async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 640, height: 480 } 
+                });
+                video.srcObject = stream;
+                captureBtn.disabled = false;
+                showMessage('Camera started. Show your hand clearly.', 'info');
+            } catch (err) {
+                showMessage('Error accessing camera: ' + err.message, 'error');
+            }
+        });
+
+        // Capture image
+        captureBtn.addEventListener('click', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            capturedImage = canvas.toDataURL('image/jpeg');
+            submitBtn.disabled = false;
+            showMessage('Hand captured! Click Register to complete.', 'success');
+        });
+
+        // Submit registration
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            
+            if (!capturedImage) {
+                showMessage('Please capture your hand first!', 'error');
+                return;
+            }
+
+            showMessage('Registering...', 'info');
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: username,
+                        image: capturedImage
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(result.message + ' Redirecting to login...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    showMessage(result.message, 'error');
+                    submitBtn.disabled = false;
+                }
+            } catch (err) {
+                showMessage('Error: ' + err.message, 'error');
+                submitBtn.disabled = false;
+            }
+        });
+
+        function showMessage(msg, type) {
+            messageDiv.textContent = msg;
+            messageDiv.className = 'message ' + type;
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>
